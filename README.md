@@ -4,6 +4,11 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Available Scripts
 
+Run this app using:
+
+### `yarn electron:start`
+
+This runs the app in an electron application.\
 In the project directory, you can run:
 
 ### `npm start`
