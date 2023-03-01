@@ -1,0 +1,21 @@
+#img1 {
+    width: 800px;
+    height: auto;
+}
+
+#image-div {
+    position: relative;
+    display: inline-block;
+    object-fit: cover;
+}
+
+/* #bbox1 {
+    position: absolute;
+    width: calc(100% - 100px);
+    height: 50px;
+    background-color: red;
+    left: 0px;
+    top: 0px;
+    height: 7em;
+    opacity: 0.9;
+} */
