@@ -8,6 +8,7 @@ import Hovering from './pages/Hovering';
 import DropDown2 from './pages/DropDown2'
 import ImageDivUpload from './pages/ImageDivUpload';
 import JsonUpload from './pages/JsonUpload';
+import CanvasTest from './pages/CanvasTest';
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -27,6 +28,7 @@ function App() {
 				<Route path='dropdown2' element={<DropDown2 majorgroup={majorgroup} setMajorGroup={setMajorGroup} />} />
 				<Route path='imagedivupload' element={<ImageDivUpload />} />
 				<Route path='jsonupload' element={<JsonUpload />} />
+				<Route exact path='/canvastest' element={<CanvasTest />} />
 				<Route exact path='/FileUploadHTML' render={
 					() => {
 						window.location.href="FileUploadHTML.html"

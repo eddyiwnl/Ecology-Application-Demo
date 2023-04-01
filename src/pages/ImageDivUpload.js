@@ -6,7 +6,7 @@ const ImageDivUpload = () => {
         <section className='section'>
             <h2>ImageDivUpload</h2>
             <div id='image-div'>
-                <img src={require('../photos/M12_3_Oct19_6a.jpg')} id="img1"></img>
+                <img src={require('../photos_src/M12_2_Apr19_3.jpg')} id="img1"></img>
                 <div id='bbox1' style={{
                     position: 'absolute',
                     width: 100,

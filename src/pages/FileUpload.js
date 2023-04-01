@@ -16,55 +16,6 @@ import { useState } from "react";
 //   });
 
 
-
-
-
-
-// var remote = require('electron').remote;
-// var fs = remote.require('fs');
-
-  
-// remote.dialog.showOpenDialog(remote.getCurrentWindow(),
-//    {
-//     filters: [
-//       {name: 'Images', extensions: ['png']}
-//     ]
-//    }, 
-//    function(filepaths, bookmarks) {
-//      //read image (note: use async in production)
-//      var _img = fs.readFileSync(filepaths[0]).toString('base64');
-//      //example for .png
-//      var _out = '<img src="data:image/png;base64,' + _img + '" />';
-//      //render/display
-//      var _target = document.getElementById('image_container');
-//      _target.insertAdjacentHTML('beforeend', _out);
-
-//      return;
-// });
-
-
-// const fs = window.require('fs');
-// // var remote = require('electron').remote;
-// const axios = require('axios');
- 
-// dialog.showOpenDialog(getCurrentWindow(),
-//    {
-//     filters: [
-//       {name: 'Images', extensions: ['png']}
-//     ]
-//    }, 
-//    function(filepaths, bookmarks) {
-//      //read image (note: use async in production)
-//      var _img = fs.readFileSync(filepaths[0]).toString('base64');
-//      //example for .png
-//      var _out = '<img src="data:image/png;base64,' + _img + '" />';
-//      //render/display
-//      var _target = document.getElementById('image_container');
-//      _target.insertAdjacentHTML('beforeend', _out);
-
-//      return;
-// });
-
 // if (global.filepath) {
 //          var formData = new FormData();
 //          formData.append('file', fs.createReadStream(global.filepath));
@@ -74,7 +25,6 @@ import { useState } from "react";
 //            }
 //         });
 //       }
-
 // const filePath = await window.electronAPI.openFile()
 
 const FileUpload = ({fileName, setFileName}) => {

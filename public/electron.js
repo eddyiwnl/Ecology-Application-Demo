@@ -59,25 +59,21 @@ function setupLocalFilesNormalizerProxy() {
 
 // Open file dialog
 function handleFileOpen(e, message, mainWindow) {
-  console.log("hi")
-  const result = dialog.showOpenDialog({
-    properties: ["openFile"],
-    filters: [{ name: "Images", extensions: ["png","jpg","jpeg"] }]
-  });
+  const dialogResult = dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile']
+  })
+  return dialogResult
+  // console.log("hi")
+  // const result = dialog.showOpenDialog({
+  //   properties: ["openFile"],
+  //   filters: [{ name: "Images", extensions: ["png","jpg","jpeg"] }]
+  // });
 
-  result.then(({canceled, filePaths, bookmarks}) => {
-    const base64 = fs.readFileSync(filePaths[0]).toString('base64');
-    event.reply("chosenFile", base64);
-  });
-  return result
-  // dialog.showMessageBox(mainWindow, { message })
-  // const { cancelled, filePaths } = dialog.showOpenDialog()
-  // if (cancelled) {
-  //   return
-  // } else {
-  //   console.log(filePaths)
-  //   return filePaths[0]
-  // }
+  // result.then(({canceled, filePaths, bookmarks}) => {
+  //   const base64 = fs.readFileSync(filePaths[0]).toString('base64');
+  //   event.reply("chosenFile", base64);
+  // });
+  // return result
 }
 
 async function handleAsyncMessage(event, arg) {
@@ -100,33 +96,33 @@ app.whenReady().then(() => {
   //   dialog.showMessageBox(mainWindow, { message })
   // });
 
-    ipcMain.handle("dialog:openFile", (event, arg) => {
-      const dialogResult = dialog.showOpenDialog(mainWindow, {
-          properties: ['openFile']
-      })
-      return dialogResult
-      // dialog.showOpenDialog(mainWindow, {
-      //   properties: ['openFile']
-      // }).then(result => {
-      //   console.log(result.canceled)
-      //   console.log(result.filePaths)
-      //   console.log(result.filePaths[0])
-      //   event.sender.send('OPEN_FILE_PATH', [result.filePaths])
-      //   return result
-      // })
-      // const result = dialog.showOpenDialog({
-      //   properties: ["openFile"],
-      //   filters: [{ name: "Images", extensions: ["png","jpg","jpeg"] }]
-      // });
-      // console.log('result: ', result)
+    // ipcMain.handle("dialog:openFile", (event, arg) => {
+    //   const dialogResult = dialog.showOpenDialog(mainWindow, {
+    //       properties: ['openFile']
+    //   })
+    //   return dialogResult
+    //   // dialog.showOpenDialog(mainWindow, {
+    //   //   properties: ['openFile']
+    //   // }).then(result => {
+    //   //   console.log(result.canceled)
+    //   //   console.log(result.filePaths)
+    //   //   console.log(result.filePaths[0])
+    //   //   event.sender.send('OPEN_FILE_PATH', [result.filePaths])
+    //   //   return result
+    //   // })
+    //   // const result = dialog.showOpenDialog({
+    //   //   properties: ["openFile"],
+    //   //   filters: [{ name: "Images", extensions: ["png","jpg","jpeg"] }]
+    //   // });
+    //   // console.log('result: ', result)
   
 
-      // result.then(({canceled, filePaths, bookmarks}) => {
-      //   const base64 = fs.readFileSync(filePaths[0]).toString('base64');
-      //   event.reply("chosenFile", base64);
-      // });
-    });
-  // ipcMain.handle('dialog:openFile', handleFileOpen);
+    //   // result.then(({canceled, filePaths, bookmarks}) => {
+    //   //   const base64 = fs.readFileSync(filePaths[0]).toString('base64');
+    //   //   event.reply("chosenFile", base64);
+    //   // });
+    // });
+  ipcMain.handle('dialog:openFile', handleFileOpen);
   ipcMain.handle('async-message', handleAsyncMessage);
   
   ipcMain.on('ipc-example', async (event, arg) => {

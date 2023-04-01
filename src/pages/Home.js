@@ -36,6 +36,10 @@ const Home = () => {
             <Link to='/jsonupload' className='btn'>
                 Json Upload
             </Link>
+            <br />
+            <Link to='/canvastest' className='btn'>
+                Bounding Box Canvas
+            </Link>
         </section>
 
     );

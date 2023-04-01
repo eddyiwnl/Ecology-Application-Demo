@@ -21,13 +21,6 @@ process.once("loaded", () => {
           ipcRenderer.once(channel, (event, ...args) => func(...args));
         }
       },
-      // on(channel, func) {
-      //   const validChannels = ['dialog:openFile'];
-      //   if (validChannels.includes(channel)) {
-      //     // Deliberately strip event as it includes `sender`
-      //     ipcRenderer.on(channel, (event, ...args) => func(...args));
-      //   }
-      // }
       on(channel) {
         const validChannels = ['dialog:openFile', 'OPEN_FILE_PATH'];
         if (validChannels.includes(channel)) {
