@@ -11,12 +11,23 @@ One of two functionalities:
 const CanvasTest = () => {
     var testJson = require('../model_outputs/test_output.json')
 
-    const [outputGroup, setOutputGroup] = useState("")
+    const [outputGroup, setOutputGroup] = useState("") // test output
+    const [currElement, setCurrElement] = useState("") // current box id
+    const [show, setShow] = useState(false) // show or no show button
+    const [bboxs, setBboxs] = useState([]) // bbox_list
+    const [currCtx, setCurrCtx] = useState() // current context (usually the canvasRef.current)
 
     const canvasRef = useRef();
     const textCanvasRef = useRef();
 
     var bbox_list = []
+
+    var closeEnough = 5
+    var dragTL = false;
+    var dragBL = false;
+    var dragTR = false;
+    var dragBR = false;
+
 
     // Hash table: major group -> bbox color
     /* 
@@ -58,7 +69,7 @@ const CanvasTest = () => {
         console.log(bbox)
         ctx.strokeStyle = major_group_color.get(labels);
         ctx.fillStyle = major_group_color.get(labels);
-        ctx.globalAlpha = 0.2;
+        ctx.globalAlpha = 0.4;
         ctx.lineWidth = 2;
         // strokeRect(x, y, width, height)
         // 6.545 is our scaling from the original image dimensions (5400px x 3600px): we scale it down to (825px x 550px)
@@ -66,6 +77,7 @@ const CanvasTest = () => {
         ctx.fillRect(x1/6.545, y1/6.545, (x2-x1)/6.545, (y2-y1)/6.545);
         
         bbox_list.push({x: x1/6.545, y: y1/6.545, w: (x2-x1)/6.545, h: (y2-y1)/6.545, color: major_group_color.get(labels), majorgroup: labels})
+        setBboxs(bbox_list)
         // ctx.clearRect((x1/6.545)-3, (y1/6.545)-3, ((x2-x1)/6.545)+4, ((y2-y1)/6.545)+4) 
         // -3 because lineWidth is creating a border outside the rect pixels
         // +4 is because the previous line doesnt reach the last line
@@ -92,6 +104,8 @@ const CanvasTest = () => {
         setCanvasDims(ctx);
         setCanvasDims(text_ctx);
 
+        setCurrCtx(ctx)
+
         console.log(testJson)
         for (var i = 0; i < testJson["M12_2_Apr19_3.jpg"].truth.true_boxes.length; i++)
         {
@@ -106,11 +120,12 @@ const CanvasTest = () => {
         console.log(bbox_list)
 
         var hover = false, id;
+        var clicked = false;
         var _i, _b;
         function renderMap() {
             for(_i = 0; _b = bbox_list[_i]; _i ++) {
                 if(hover && id === _i) {
-                    ctx.fillStyle = "red"
+                    ctx.fillStyle = "white"
                     console.log(_b.majorgroup)
                     setOutputGroup(_b.majorgroup)
                 }
@@ -123,9 +138,79 @@ const CanvasTest = () => {
             }
         }
 
+        function checkCloseEnough(p1, p2) {
+            return Math.abs(p1 - p2) < closeEnough;
+        }
+        // current issue: clicking event temporarily overrides the color for hover functionality; RESOLVED
+        function renderMap2(x, y) {
+            // var r = canvasRef.current.getBoundingClientRect(),
+            //     x = e.clientX - r.left, y = e.clientY - r.top;
+            // 4 cases:
+            // 1. top left
+            console.log('coords: ', x, y)
+            if (checkCloseEnough(x, bboxs[currElement].x) && checkCloseEnough(y, bboxs[currElement].y)) {
+                dragTL = true;
+                console.log("Dragging top left")
+            }
+            // 2. top right
+            else if (checkCloseEnough(x, bboxs[currElement].x + bboxs[currElement].w) && checkCloseEnough(y, bboxs[currElement].y)) {
+                dragTR = true;
+                console.log("Dragging top right")
+            }
+            // 3. bottom left
+            else if (checkCloseEnough(x, bboxs[currElement].x) && checkCloseEnough(y, bboxs[currElement].y + bboxs[currElement].h)) {
+                dragBL = true;
+                console.log("Dragging bottom left")
+            }
+            // 4. bottom right
+            else if (checkCloseEnough(x, bboxs[currElement].x + bboxs[currElement].w) && checkCloseEnough(y, bboxs[currElement].y + bboxs[currElement].h)) {
+                dragBR = true;
+                console.log("Dragging bottomright")
+            }
+            // (5.) none of them
+            else {
+                console.log("None")
+                // handle not resizing
+            }
+            for(_i = 0; _b = bbox_list[_i]; _i ++) {
+                if(hover && id === _i) {
+                    setCurrElement(_i)
+                    setShow(true);
+                    ctx.fillStyle = "white";
+                }
+                else {
+                    ctx.fillStyle = _b.color;
+                }
+                // ctx.fillStyle = (hover && id === _i) ? "red" : _b.color;
+                ctx.fillRect(_b.x, _b.y, _b.w, _b.h);
+                // setOutputGroup(_b.majorgroup);
+            }
+        }
+
         renderMap();
-        canvasRef.current.onmousemove = function(e) {
-            // Get the current mouse position
+        // canvasRef.current.onmousemove = function(e) {
+        //     // Get the current mouse position
+        //     var r = canvasRef.current.getBoundingClientRect(),
+        //         x = e.clientX - r.left, y = e.clientY - r.top;
+        //     hover = false;
+
+        //     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+        //     for(var i = bbox_list.length - 1, b; b = bbox_list[i]; i--) {
+        //         if(x >= b.x && x <= b.x + b.w &&
+        //         y >= b.y && y <= b.y + b.h) {
+        //             // The mouse honestly hits the rect
+        //             hover = true;
+        //             id = i;
+        //             // canvas.addEventListener
+        //             break;
+        //         }
+        //     }
+        //     // Draw the rectangles by Z (ASC)
+        //     renderMap();
+        // }
+
+        canvasRef.current.onmousedown = function(e) {
             var r = canvasRef.current.getBoundingClientRect(),
                 x = e.clientX - r.left, y = e.clientY - r.top;
             hover = false;
@@ -138,19 +223,75 @@ const CanvasTest = () => {
                     // The mouse honestly hits the rect
                     hover = true;
                     id = i;
+                    setShow(true);
+
                     break;
                 }
+                else{
+                    setShow(false);
+                }
             }
-            // Draw the rectangles by Z (ASC)
-            renderMap();
+            console.log('coords: ', x, y)
+            // console.log(id)
+            if (checkCloseEnough(x, bbox_list[id].x) && checkCloseEnough(y, bbox_list[id].y)) {
+                dragTL = true;
+                console.log("Dragging top left")
+            }
+            // 2. top right
+            else if (checkCloseEnough(x, bbox_list[id].x + bbox_list[id].w) && checkCloseEnough(y, bbox_list[id].y)) {
+                dragTR = true;
+                console.log("Dragging top right")
+            }
+            // 3. bottom left
+            else if (checkCloseEnough(x, bbox_list[id].x) && checkCloseEnough(y, bbox_list[id].y + bbox_list[id].h)) {
+                dragBL = true;
+                console.log("Dragging bottom left")
+            }
+            // 4. bottom right
+            else if (checkCloseEnough(x, bbox_list[id].x + bbox_list[id].w) && checkCloseEnough(y, bbox_list[id].y + bbox_list[id].h)) {
+                dragBR = true;
+                console.log("Dragging bottom right")
+            }
+            // (5.) none of them
+            else {
+                console.log("None")
+                // handle not resizing
+            }
+            for(_i = 0; _b = bbox_list[_i]; _i ++) {
+                if(hover && id === _i) {
+                    setCurrElement(_i)
+                    setShow(true);
+                    ctx.fillStyle = "white";
+                }
+                else {
+                    ctx.fillStyle = _b.color;
+                }
+                // ctx.fillStyle = (hover && id === _i) ? "red" : _b.color;
+                ctx.fillRect(_b.x, _b.y, _b.w, _b.h);
+                // setOutputGroup(_b.majorgroup);
+            }
+            // renderMap2(x, y);
         }
-
+        
 
         writeText(text_ctx, { text: 'Hi!', x: 200, y: 0 });
 
     }, []);
 
+    const drawCircle = (ctx, x, y, radius) => {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+    }
 
+    const drawCircles = (id, ctx) => {
+        drawCircle(ctx, bboxs[id].x, bboxs[id].y, closeEnough) // top left
+        drawCircle(ctx, bboxs[id].x + bboxs[id].w, bboxs[id].y, closeEnough) // top right
+        drawCircle(ctx, bboxs[id].x, bboxs[id].y + bboxs[id].h, closeEnough) // bottom left
+        drawCircle(ctx, bboxs[id].x + bboxs[id].w, bboxs[id].y + bboxs[id].h, closeEnough) // bottom right
+
+    }
 
     return (
         <section className='section'>
@@ -190,6 +331,15 @@ const CanvasTest = () => {
             </div>
             <div id="rest">
                 <h2>Major Group: {outputGroup}</h2>
+                <h2>MouseDown Group: {currElement}</h2>
+                {
+                    show && 
+                    <button onClick={() => drawCircles(currElement, currCtx)}
+                        className="b1"
+                    >
+                    Test
+                    </button>
+                }
             </div>
             {/* <div>
                 The mouse is at position{' '}
