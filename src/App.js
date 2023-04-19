@@ -16,6 +16,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function App() {
 	const [majorgroup, setMajorGroup] = React.useState("")
 	const [fileName, setFileName] = React.useState("")
+	const [projectData, setProjectData] = React.useState()
   return (
 	<HashRouter>
 		<div className="App">
@@ -28,7 +29,7 @@ function App() {
 				<Route path='dropdown2' element={<DropDown2 majorgroup={majorgroup} setMajorGroup={setMajorGroup} />} />
 				<Route path='imagedivupload' element={<ImageDivUpload />} />
 				<Route path='jsonupload' element={<JsonUpload />} />
-				<Route exact path='/canvastest' element={<CanvasTest />} />
+				<Route exact path='/canvastest' element={<CanvasTest projectData={projectData} setProjectData={setProjectData}/>} />
 				<Route exact path='/FileUploadHTML' render={
 					() => {
 						window.location.href="FileUploadHTML.html"

@@ -13,6 +13,7 @@ process.once("loaded", () => {
         ipcRenderer.send('ipc-example', 'ping');
       },
       openFile: () => ipcRenderer.invoke('dialog:openFile'),
+      saveFile: () => ipcRenderer.invoke('dialog:saveFile'),
       asyncMessage: () => ipcRenderer.send('async-message'),
       once(channel, func) {
         const validChannels = ['ipc-example'];
@@ -21,15 +22,15 @@ process.once("loaded", () => {
           ipcRenderer.once(channel, (event, ...args) => func(...args));
         }
       },
-      on(channel) {
-        const validChannels = ['dialog:openFile', 'OPEN_FILE_PATH'];
-        if (validChannels.includes(channel)) {
-          ipcRenderer.on(channel, (event, result) => {
-            const src = `data:image/jpg;base64,${result}`
-            return src;
-          })
-        }
-      }
+      // on(channel) {
+      //   const validChannels = ['dialog:openFile', 'OPEN_FILE_PATH'];
+      //   if (validChannels.includes(channel)) {
+      //     ipcRenderer.on(channel, (event, result) => {
+      //       const src = `data:image/jpg;base64,${result}`
+      //       return src;
+      //     })
+      //   }
+      // }
     }
   })
 });

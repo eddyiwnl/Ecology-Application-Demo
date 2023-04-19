@@ -45,15 +45,16 @@ const FileUpload = ({fileName, setFileName}) => {
         console.log(e)
         console.log(filePath)
         filePath.then(result => {
+            console.log("RESULT: ", result)
             console.log(result.filePaths)
             fileVars.fileName = result.filePaths
             setFileName(result.filePaths)
         })
-        const filePath2 = window.electronAPI.ipcR.on('OPEN_FILE_PATH')
+        // const filePath2 = window.electronAPI.ipcR.on('OPEN_FILE_PATH')
         
 
         // setFilePathText(filePath)
-        console.log(filePath2)
+        // console.log(filePath2)
 
     }
 

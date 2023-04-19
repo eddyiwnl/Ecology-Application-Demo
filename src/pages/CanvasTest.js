@@ -2,20 +2,28 @@ import { Link } from "react-router-dom";
 import React, { useEffect, useRef, useState } from "react";
 import './CanvasTest.css'
 import jsonData from '../model_outputs/test_output.json'
+const fs = require('fs');
 
 // const PureCanvas = React.forwardRef((props, ref) => <canvas ref={ref} />)
 
 /* TODO
 One of two functionalities: 
 */
-const CanvasTest = () => {
+const CanvasTest = ({projectData, setProjectData}) => {
     var testJson = require('../model_outputs/test_output.json')
+    setProjectData(testJson)
 
     const [outputGroup, setOutputGroup] = useState("") // test output
     const [currElement, setCurrElement] = useState("") // current box id
     const [show, setShow] = useState(false) // show or no show button
     const [bboxs, setBboxs] = useState([]) // bbox_list
     const [currCtx, setCurrCtx] = useState() // current context (usually the canvasRef.current)
+    const [currMajorGroup, setCurrMajorGroup] = useState("") // current selected major group
+    const [numElements, setNumElements] = useState(0) // number of bounding boxes
+    const [currFilepath, setCurrFilepath] = useState("")
+
+    const [inEdit, setInEdit] = useState(false) // whether or not the user is currently editing
+
 
     const canvasRef = useRef();
     const textCanvasRef = useRef();
@@ -27,6 +35,7 @@ const CanvasTest = () => {
     var dragBL = false;
     var dragTR = false;
     var dragBR = false;
+    // var inEdit = false;
 
 
     // Hash table: major group -> bbox color
@@ -99,11 +108,15 @@ const CanvasTest = () => {
     }
     
     useEffect(() => {
+        console.log("USE EFFECT 2");
+    }, [inEdit]);
+
+    useEffect(() => {
         const ctx = canvasRef.current.getContext("2d")
         const text_ctx = textCanvasRef.current.getContext("2d")
         setCanvasDims(ctx);
         setCanvasDims(text_ctx);
-
+        // setInEdit(true);
         setCurrCtx(ctx)
 
         console.log(testJson)
@@ -121,6 +134,7 @@ const CanvasTest = () => {
 
         var hover = false, id;
         var clicked = false;
+        var dragging = false;
         var _i, _b;
         function renderMap() {
             for(_i = 0; _b = bbox_list[_i]; _i ++) {
@@ -224,39 +238,50 @@ const CanvasTest = () => {
                     hover = true;
                     id = i;
                     setShow(true);
-
+                    setCurrMajorGroup(b.majorgroup);
                     break;
                 }
                 else{
+                    hover = false;
+                    setCurrMajorGroup('');
                     setShow(false);
                 }
             }
             console.log('coords: ', x, y)
+            console.log("ID: ", id)
             // console.log(id)
             if (checkCloseEnough(x, bbox_list[id].x) && checkCloseEnough(y, bbox_list[id].y)) {
+                dragging = true;
                 dragTL = true;
                 console.log("Dragging top left")
             }
             // 2. top right
             else if (checkCloseEnough(x, bbox_list[id].x + bbox_list[id].w) && checkCloseEnough(y, bbox_list[id].y)) {
+                dragging = true;
                 dragTR = true;
                 console.log("Dragging top right")
             }
             // 3. bottom left
             else if (checkCloseEnough(x, bbox_list[id].x) && checkCloseEnough(y, bbox_list[id].y + bbox_list[id].h)) {
+                dragging = true;
                 dragBL = true;
                 console.log("Dragging bottom left")
             }
             // 4. bottom right
             else if (checkCloseEnough(x, bbox_list[id].x + bbox_list[id].w) && checkCloseEnough(y, bbox_list[id].y + bbox_list[id].h)) {
+                dragging = true;
                 dragBR = true;
                 console.log("Dragging bottom right")
             }
             // (5.) none of them
             else {
+                dragging = false;
                 console.log("None")
                 // handle not resizing
             }
+
+            // ctx.clearRect(bbox_list[id].x, bbox_list[id].y, bbox_list[id].w, bbox_list[id].h);
+
             for(_i = 0; _b = bbox_list[_i]; _i ++) {
                 if(hover && id === _i) {
                     setCurrElement(_i)
@@ -273,6 +298,111 @@ const CanvasTest = () => {
             // renderMap2(x, y);
         }
         
+        canvasRef.current.onmouseup = function(e) {
+            dragTL = dragBR = dragTR = dragBL = false;
+            dragging = false;
+            // ctx.clearRect(bbox_list[id].x, bbox_list[id].y, bbox_list[id].w, bbox_list[id].h);
+            // if(dragging) {
+            //     drawAnchors();
+            // }
+            for(_i = 0; _b = bbox_list[_i]; _i ++) {
+                if(hover && id === _i) {
+                    ctx.fillStyle = "white";
+                }
+                else {
+                    ctx.fillStyle = _b.color;
+                }
+                // ctx.fillStyle = (hover && id === _i) ? "red" : _b.color;
+                ctx.fillRect(_b.x, _b.y, _b.w, _b.h);
+                // setOutputGroup(_b.majorgroup);
+            }
+        }
+
+        canvasRef.current.onmousemove = function(e) {
+            var r = canvasRef.current.getBoundingClientRect(),
+                x = e.clientX - r.left, y = e.clientY - r.top;
+
+            if (dragTL) {
+                setShow(true);
+                bbox_list[id].w += bbox_list[id].x - x;
+                bbox_list[id].h += bbox_list[id].y - y;
+                bbox_list[id].x = x;
+                bbox_list[id].y = y;
+            } else if (dragTR) {
+                setShow(true);
+                bbox_list[id].w = Math.abs(bbox_list[id].x - x);
+                bbox_list[id].h += bbox_list[id].y - y;
+                bbox_list[id].y = y;
+            } else if (dragBL) {
+                setShow(true);
+                bbox_list[id].w += bbox_list[id].x - x;
+                bbox_list[id].h = Math.abs(bbox_list[id].y - y);
+                bbox_list[id].x = x;
+            } else if (dragBR) {
+                setShow(true);
+                bbox_list[id].w = Math.abs(bbox_list[id].x - x);
+                bbox_list[id].h = Math.abs(bbox_list[id].y - y);
+            }
+            // ctx.clearRect(bbox_list[id].x, bbox_list[id].y, bbox_list[id].w, bbox_list[id].h);
+            if(dragging) {
+                setShow(true);
+                // inEdit=true;
+                ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                drawAnchors();
+            }
+            else {
+                ctx.clearRect(bbox_list[id].x, bbox_list[id].y, bbox_list[id].w, bbox_list[id].h);
+                // for(_i = 0; _b = bbox_list[_i]; _i ++) {
+                //     if(hover && id === _i) {
+                //         ctx.fillStyle = "white";
+                //     }
+                //     else {
+                //         ctx.fillStyle = _b.color;
+                //     }
+                //     // ctx.fillStyle = (hover && id === _i) ? "red" : _b.color;
+                //     ctx.fillRect(_b.x, _b.y, _b.w, _b.h);
+                //     // setOutputGroup(_b.majorgroup);
+                // }
+            }
+            draw();
+            console.log("inEdit: ", inEdit)
+        }
+
+        function draw() {
+            if(hover == true) {
+                ctx.fillStyle = "white";
+            } else {
+                ctx.fillStyle = bbox_list[id].color
+            }
+            ctx.globalAlpha = 0.4;
+            ctx.fillRect(bbox_list[id].x, bbox_list[id].y, bbox_list[id].w, bbox_list[id].h)
+            // drawAnchors();
+        }
+
+        function singleAnchor(x, y, radius) {
+            ctx.fillStyle = "#FFFFFF";
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function clearAnchor(x, y, radius) {
+            ctx.globalCompositionOperation = 'destination-out'
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    
+        function drawAnchors() {
+            singleAnchor(bbox_list[id].x, bbox_list[id].y, closeEnough) // top left
+            singleAnchor(bbox_list[id].x + bbox_list[id].w, bbox_list[id].y, closeEnough) // top right
+            singleAnchor(bbox_list[id].x, bbox_list[id].y + bbox_list[id].h, closeEnough) // bottom left
+            singleAnchor(bbox_list[id].x + bbox_list[id].w, bbox_list[id].y + bbox_list[id].h, closeEnough) // bottom right
+
+            // clearAnchor(bbox_list[id].x, bbox_list[id].y, closeEnough) // top left
+            // clearAnchor(bbox_list[id].x + bbox_list[id].w, bbox_list[id].y, closeEnough) // top right
+            // clearAnchor(bbox_list[id].x, bbox_list[id].y + bbox_list[id].h, closeEnough) // bottom left
+            // clearAnchor(bbox_list[id].x + bbox_list[id].w, bbox_list[id].y + bbox_list[id].h, closeEnough) // bottom right
+        }
 
         writeText(text_ctx, { text: 'Hi!', x: 200, y: 0 });
 
@@ -286,11 +416,62 @@ const CanvasTest = () => {
     }
 
     const drawCircles = (id, ctx) => {
+        console.log("CURRENT ELEMENT STUFF: ", bboxs[id].x, bboxs[id].y, bboxs[id].w, bboxs[id].h)
         drawCircle(ctx, bboxs[id].x, bboxs[id].y, closeEnough) // top left
         drawCircle(ctx, bboxs[id].x + bboxs[id].w, bboxs[id].y, closeEnough) // top right
         drawCircle(ctx, bboxs[id].x, bboxs[id].y + bboxs[id].h, closeEnough) // bottom left
         drawCircle(ctx, bboxs[id].x + bboxs[id].w, bboxs[id].y + bboxs[id].h, closeEnough) // bottom right
+        setInEdit(true);
+        // inEdit = true
+        console.log("INEDIT: ", inEdit)
+    }
 
+    const dummySave = (id) => {
+        setShow(false);
+        console.log("SAVED ELEMENT STUFF: ", bboxs[id].x, bboxs[id].y, bboxs[id].w, bboxs[id].h)
+        // inEdit = false
+        setInEdit(false);
+    }
+
+    const dummyNew = (currElement, ctx) => {
+        // Create new data point and add to bboxs list
+        var to_add_x = canvasRef.current.width/2
+        var to_add_y = canvasRef.current.height/2
+        var to_add_w = 30
+        var to_add_h = 30
+        var to_add_color = "#8C8B8B" // this is the 'other' color
+        var to_add_majorgroup = "None"
+        bboxs.push({x: to_add_x, y: to_add_y, w: to_add_w, h: to_add_h, color: to_add_color, majorgroup: to_add_majorgroup})
+        console.log("New bboxs: ", bboxs)
+
+        // Draw the new box
+        ctx.strokeStyle = to_add_color;
+        ctx.fillStyle = to_add_color;
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 2;
+        // strokeRect(x, y, width, height)
+        // 6.545 is our scaling from the original image dimensions (5400px x 3600px): we scale it down to (825px x 550px)
+        ctx.strokeRect(to_add_x, to_add_y, to_add_w, to_add_h);
+        ctx.fillRect(to_add_x, to_add_y, to_add_w, to_add_h);
+
+
+        // // Set current id to new box to get ready to edit it
+        // drawCircles((bboxs.length-1), ctx)
+    }
+
+    const dummySaveFile = () => {
+        const currSaveFilepath = window.electronAPI.ipcR.saveFile()
+        currSaveFilepath.then(result => {
+            console.log("filepath: ", result.filePath)
+            fs.writeFileSync(result.filePath, JSON.stringify(projectData), 'utf-8')
+        })
+        // var fs = require('fs');
+        // fs.writeFile("test.txt", jsonData, function(err) {
+        //     if (err) {
+        //         console.log(err);
+        //     }
+        // });
+        // console.log("Save path: ", currSaveFilepath)
     }
 
     return (
@@ -331,15 +512,37 @@ const CanvasTest = () => {
             </div>
             <div id="rest">
                 <h2>Major Group: {outputGroup}</h2>
-                <h2>MouseDown Group: {currElement}</h2>
+                <h2>MouseDown Group: {currMajorGroup}</h2>
+                <h2>Test: {bboxs.length}</h2>
                 {
                     show && 
                     <button onClick={() => drawCircles(currElement, currCtx)}
                         className="b1"
                     >
-                    Test
+                    Edit { /* TODO: inEdit button so that anchors can be drawn while dragging */ }
+                    </button>
+                }                
+                {
+                    show && 
+                    <button onClick={() => dummySave(currElement)}
+                        className="b2"
+                    >
+                    Save
                     </button>
                 }
+                <br />
+                <button onClick={() => dummyNew(currElement, currCtx)} 
+                    className="b3"
+                >
+                New
+                </button>
+                <br /> <br />
+                <button onClick={() => dummySaveFile()}
+                    className="save-file-button"
+                >
+                    Save Project
+                </button>
+                {/* create save button */}
             </div>
             {/* <div>
                 The mouse is at position{' '}

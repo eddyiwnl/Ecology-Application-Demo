@@ -76,6 +76,31 @@ function handleFileOpen(e, message, mainWindow) {
   // return result
 }
 
+// Save file dialog
+const ExcelExportData = 
+    [{
+      filename: 'img1.jpg', 
+      majorgroup: 'Amphipoda', 
+      individualcount: '2', 
+      reviewed: '0'
+    },
+    {
+      filename: 'img1.jpg', 
+      majorgroup: 'Polychaeta', 
+      individualcount: '3', 
+      reviewed: '1'
+    }]
+function handleFileSave(e, message, mainWindow) {
+  const dialogResult = dialog.showSaveDialog(mainWindow, {
+    properties: ['openFile']
+  })
+  // dialogResult.then(result => {
+  //   console.log("RESULT: ", result)
+  //   fs.writeFileSync(result.filePath, JSON.stringify(ExcelExportData), 'utf-8');
+  // })
+    return dialogResult
+}
+
 async function handleAsyncMessage(event, arg) {
   console.log("Hi", arg)
 }
@@ -124,6 +149,7 @@ app.whenReady().then(() => {
     // });
   ipcMain.handle('dialog:openFile', handleFileOpen);
   ipcMain.handle('async-message', handleAsyncMessage);
+  ipcMain.handle('dialog:saveFile', handleFileSave);
   
   ipcMain.on('ipc-example', async (event, arg) => {
     const msgTemplate = (pingPong) => `IPC test: ${pingPong}`;
